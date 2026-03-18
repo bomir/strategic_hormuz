@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Simulatore Hormuz - Canvas Responsive</title>
+<style>
+  html, body {
+    margin:0; padding:0; height:100%; width:100%;
+    font-family: Arial, sans-serif;
+    background: #dde;
+  }
+  #container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+  }
+  #left {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  #right {
+    flex: 1;
+    background: #fff;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  h2, p, button {
+    margin: 5px 0;
+  }
+  button {
+    padding: 8px 12px;
+    margin-right: 5px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .canvas-container {
+    flex-grow: 1;
+    position: relative;
+    margin: 5px 0;
+    border: 1px solid #333;
+    background: #eef;
+  }
+  canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div id="container">
+  <div id="left">
+    <h2>🌍 Simulatore Interattivo: Stretto di Hormuz</h2>
+    <p>🚢 + 🍌 = petrolio trasportato | 🍎 = dollaro | 🍊 = yuan</p>
+    <p id="status">Premi una decisione politica per vedere gli effetti.</p>
+    <div>
+      <button onclick="chiudiHormuz()">🚫 Chiudi Hormuz</button>
+      <button onclick="apriHormuz()">✅ Apri Hormuz</button>
+    </div>
+
+    <div class="canvas-container" id="map-container" style="height: 45%;">
+      <canvas id="map"></canvas>
+    </div>
+    <div class="canvas-container" id="energy-container" style="height: 20%;">
+      <canvas id="energy"></canvas>
+    </div>
+    <div class="canvas-container" id="trade-container" style="height: 20%;">
+      <canvas id="trade"></canvas>
+    </div>
+  </div>
+
+  <div id="right">
+    <h3>📖 Situazione globale</h3>
+    <p id="story">Tutto parte con il flusso normale di petrolio dal Golfo verso Europa e Asia. Le navi trasportano le banane (petrolio) lungo le rotte principali.</p>
+    <div style="background:#FFF9C4; border:1px solid #FBC02D; padding:10px; border-radius:8px; font-size:14px; margin-top:10px;">
+      <h3>Riassunto super semplice</h3>
+      <p>Banane 🍌 = petrolio</p>
+      <p>Mele 🍎 = dollari</p>
+      <p>Arance 🍊 = altre valute (tipo yuan)</p>
+      <p>👉 Se tutti devono usare mele → gli USA sono fortissimi</p>
+      <p>👉 Se iniziano a usare anche arance → gli USA perdono potere</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function resizeCanvas(canvas) {
+    const container = canvas.parentElement;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+      return true;
+    }
+    return false;
+  }
+
+  function resizeAll() {
+    resizeCanvas(map);
+    resizeCanvas(energy);
+    resizeCanvas(trade);
+  }
+
+  let ctx = map.getContext("2d");
+  let ectx = energy.getContext("2d");
+  let tctx = trade.getContext("2d");
+
+  let hormuz = false;
+  let navi = [];
+
+  let prezzo = 100;
+  let energia = 100;
+  let commercio = 100;
+  let dollaro = 80;
+  let yuan = 20;
+
+  const prezzo0 = 100;
+  const energia0 = 100;
+  const commercio0 = 100;
+  const dollaro0 = 80;
+  const yuan0 = 20;
+
+  const minEnergia = energia0*0.5;
+  const minCommercio = commercio0*0.4;
+  const minDollaro = dollaro0*0.5;
+  const maxPrezzo = 400;
+
+  function creaNave() {
+    let target = Math.random() > 0.5 ? "europa" : "asia";
+    navi.push({ progress: 0, speed: 0.5 + Math.random() * 0.5, target: target, banane: 3 + Math.floor(Math.random() * 4) });
+  }
+  setInterval(creaNave, 2000);
+
+  function chiudiHormuz() { hormuz = true; document.getElementById("status").innerText = "🚫 Hormuz chiuso: blocco petrolio e crisi!"; }
+  function apriHormuz() { hormuz = false; document.getElementById("status").innerText = "✅ Hormuz aperto: flusso normale, valori in recupero."; }
+
+  function economia() {
+    if (hormuz) {
+      prezzo += 3;
+      energia -= 0.8;
+      commercio -= 0.6;
+      dollaro -= 0.3;
+      yuan += 0.3;
+    } else {
+      prezzo += (prezzo0 - prezzo) * 0.05;
+      energia += (energia0 - energia) * 0.05;
+      commercio += (commercio0 - commercio) * 0.05;
+      dollaro += (dollaro0 - dollaro) * 0.05;
+      yuan += (yuan0 - yuan) * 0.05;
+    }
+    if (prezzo > maxPrezzo) prezzo = maxPrezzo;
+    if (energia < minEnergia) energia = minEnergia;
+    if (commercio < minCommercio) commercio = minCommercio;
+    if (dollaro < minDollaro) dollaro = minDollaro;
+    if (yuan < 0) yuan = 0;
+
+    let story = document.getElementById("story");
+    story.innerText = hormuz ?
+      "⚠️ Hormuz chiuso: il petrolio (🍌) non può passare normalmente.\n💥 Prezzi aumentano: energia e commercio subiscono impatti parziali.\n🌍 Europa e Asia ricevono meno petrolio, altre rotte mitigano la crisi.\n🇺🇸 USA: dollaro (🍎) calo moderato, 🇨🇳 Cina: yuan (🍊) sale.\n🤝 BRICS e Cina aumentano la loro influenza." :
+      "✅ Hormuz aperto: flusso normale di petrolio e merci.\n💹 Prezzi e commercio tornano ai livelli normali.\n🌍 Europa e Asia ricevono nuovamente petrolio e materie prime.\n🇺🇸 Dollaro (🍎) e 🇨🇳 Yuan (🍊) tornano verso valori iniziali.\n🤝 Situazione globale stabile, BRICS crescono lentamente.";
+  }
+  setInterval(economia, 500);
+
+  function drawShip(ctx, x, y, bananeCount) {
+    ctx.fillStyle = "#795548";
+    ctx.beginPath();
+    ctx.moveTo(x - 15, y);
+    ctx.lineTo(x - 10, y - 6);
+    ctx.lineTo(x + 10, y - 6);
+    ctx.lineTo(x + 15, y);
+    ctx.lineTo(x + 10, y + 6);
+    ctx.lineTo(x - 10, y + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#5D4037";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "#6D4C41";
+    ctx.fillRect(x - 5, y - 4, 10, 8);
+    for (let i = 0; i < bananeCount; i++) {
+      let bx = x - 7 + i * 4,
+        by = y - 2 + Math.sin((i + x / 10) * 0.5) * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx - 2, by);
+      ctx.bezierCurveTo(bx - 1, by - 3, bx + 1, by - 3, bx + 2, by);
+      ctx.bezierCurveTo(bx + 1, by + 3, bx - 1, by + 3, bx - 2, by);
+      ctx.fillStyle = "#FFEB3B";
+      ctx.fill();
+      ctx.strokeStyle = "#FBC02D";
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+
+  function drawMap() {
+    if (resizeCanvas(map)) {
+      ctx = map.getContext("2d");
+    }
+    ctx.clearRect(0, 0, map.width, map.height);
+    ctx.fillStyle = "#81C784";
+    ctx.beginPath();
+    ctx.moveTo(50, 130);
+    ctx.lineTo(100, 120);
+    ctx.lineTo(150, 140);
+    ctx.lineTo(140, 170);
+    ctx.lineTo(60, 170);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#4DB6AC";
+    ctx.beginPath();
+    ctx.moveTo(550, 50);
+    ctx.lineTo(650, 50);
+    ctx.lineTo(660, 100);
+    ctx.lineTo(550, 110);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#FFCC80";
+    ctx.beginPath();
+    ctx.moveTo(550, 200);
+    ctx.lineTo(650, 200);
+    ctx.lineTo(660, 250);
+    ctx.lineTo(550, 270);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.font = "14px Arial";
+    ctx.fillText("Golfo", 60, 125);
+    ctx.fillText("Europa", 560, 60);
+    ctx.fillText("Asia", 560, 210);
+
+    ctx.strokeStyle = "#1E88E5";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(170, 150);
+    ctx.quadraticCurveTo(350, 120, 550, 80);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(170, 150);
+    ctx.quadraticCurveTo(350, 180, 550, 230);
+    ctx.stroke();
+
+    ctx.fillStyle = hormuz ? "#E53935" : "#1E88E5";
+    ctx.fillRect(200, 140, 40, 20);
+    ctx.fillStyle = "#000";
+    ctx.fillText("Hormuz", 200, 130);
+
+    navi.forEach(n => {
+      let blocco = hormuz && n.progress < 0.25;
+      if (!blocco) n.progress += n.speed / 100;
+      let x0 = 170,
+        y0 = 150,
+        cx = 350,
+        cy = n.target === "europa" ? 120 : 180,
+        x1 = 550,
+        y1 = n.target === "europa" ? 80 : 230;
+      let x = (1 - n.progress) * (1 - n.progress) * x0 + 2 * (1 - n.progress) * n.progress * cx + n.progress * n.progress * x1;
+      let y = (1 - n.progress) * (1 - n.progress) * y0 + 2 * (1 - n.progress) * n.progress * cy + n.progress * n.progress * y1;
+      drawShip(ctx, x, y, n.banane);
+    });
+    navi = navi.filter(n => n.progress < 1);
+    requestAnimationFrame(drawMap);
+  }
+
+  function drawEnergy() {
+    if (resizeCanvas(energy)) {
+      ectx = energy.getContext("2d");
+    }
+    ectx.clearRect(0, 0, energy.width, energy.height);
+    ectx.font = "14px Arial";
+
+    // Maggiore spazio tra le barre
+    ectx.fillStyle = "orange";
+    ectx.fillRect(10, 25, energia * 5, 20);
+    ectx.fillStyle = "#000";
+    ectx.fillText("Energia disponibile: " + energia.toFixed(1), 10, 20);
+
+    ectx.fillStyle = "#D32F2F";
+    ectx.fillRect(10, 75, Math.min(prezzo, maxPrezzo) * 5, 20);
+    ectx.fillStyle = "#000";
+    ectx.fillText("💰 Prezzo petrolio: " + prezzo.toFixed(1), 10, 70);
+  }
+
+  function drawTrade() {
+    if (resizeCanvas(trade)) {
+      tctx = trade.getContext("2d");
+    }
+    tctx.clearRect(0, 0, trade.width, trade.height);
+    tctx.font = "14px Arial";
+
+    // Spaziatura aumentata tra le barre
+    tctx.fillStyle = "#4CAF50";
+    tctx.fillRect(10, 25, commercio * 5, 20);
+    tctx.fillStyle = "#000";
+    tctx.fillText("Commercio globale: " + commercio.toFixed(1), 10, 20);
+
+    tctx.fillStyle = "#1E88E5";
+    tctx.fillRect(10, 75, dollaro * 5, 20);
+    tctx.fillStyle = "#000";
+    tctx.fillText("🍎 Dollaro: " + dollaro.toFixed(1), 10, 70);
+
+    tctx.fillStyle = "#F4511E";
+    tctx.fillRect(300, 75, yuan * 5, 20);
+    tctx.fillStyle = "#000";
+    tctx.fillText("🍊 Yuan: " + yuan.toFixed(1), 300, 70);
+  }
+
+  function loop() {
+    drawEnergy();
+    drawTrade();
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener("resize", () => {
+    resizeAll();
+  });
+
+  resizeAll();
+  drawMap();
+  loop();
+</script>
+
+</body>
+</html>
